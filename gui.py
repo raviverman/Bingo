@@ -16,9 +16,11 @@ class MainWindow(object):
         assert isinstance(frames, dict)
         self.frames = frames
 
-    def switchToFrame(self, frameName: str):
+    def switchToFrame(self, frameName: str, data=None):
         self.clearMainParent()
         self.frames[frameName].visible()
+        if data:
+            self.frames[frameName].update(data)
 
     def clearMainParent(self):
         for widget in self.mainParent.winfo_children():
@@ -36,6 +38,12 @@ class Page(object):
     def __init__(self, parent, **params):
         self.parent = parent
         self.frame = tk.Frame(parent, **params)
+
+    def update(self, data):
+        # this function is called when transition to
+        # this page is made. Previous page can supply some
+        # data to update this page
+        raise NotImplementedError
 
     def visible(self):
         self.frame.pack(fill="both", expand=True)
@@ -184,12 +192,15 @@ class BingoPage(Page):
         self.frame.columnconfigure(3)
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_rowconfigure(3, weight=1)
-        # self.frame.grid_columnconfigure(0, weight=1)
         self.frame.grid_columnconfigure(1, weight=1)
         # bingo frame
         bingoFrame = tk.Frame(self.frame, bg="green")
         bingoFrame.grid(row=1, column=1, columnspan=3, sticky="we")
 
+        titleLabel = tk.Label(
+            bingoFrame, text="Select your board", bg="green", font=("Fira Code", 16)
+        )
+        titleLabel.pack()
         # create bingo
         self.bingoBtn = []
         bingoBtnCfg = {"height": 2, "width": 2, "font": ("Fira Code", 12)}
@@ -216,14 +227,14 @@ class BingoPage(Page):
         )
         createServerButton.pack()
 
-        # connect to server
-        connectServerButton = tk.Button(
+        # host server button
+        hostServerButton = tk.Button(
             buttonFrame,
-            text="Connect",
-            command=lambda: self.mainWindow.switchToFrame("host"),
+            text="Host",
+            command=lambda: self.mainWindow.switchToFrame("game", self.bingoBoard),
             **btnCfg
         )
-        connectServerButton.pack()
+        hostServerButton.pack()
 
         # back button
         backButton = tk.Button(
@@ -247,12 +258,78 @@ class BingoPage(Page):
                 i += 1
 
 
+class BingoGamePage(BingoPage):
+    def __init__(self, mainWindow: MainWindow, bingoBoard=None):
+        BingoPage.__init__(self, mainWindow, bingoBoard)
+
+    # override
+    def update(self, data):
+        self.bingoBoard = data
+        self.updateBingoBoard()
+
+    # override
+    def configure(self):
+        self.frame.rowconfigure(4)
+        self.frame.columnconfigure(3)
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(3, weight=1)
+        self.frame.grid_columnconfigure(1, weight=1)
+        # bingo frame
+        bingoFrame = tk.Frame(self.frame, bg="green")
+        bingoFrame.grid(row=1, column=1, columnspan=3, sticky="we")
+
+        messageLabel = tk.Label(
+            bingoFrame, text="Your Turn", bg="green", font=("Fira Code", 16)
+        )
+        messageLabel.pack()
+        # create bingo
+        self.bingoBtn = []
+        bingoBtnCfg = {"height": 2, "width": 2, "font": ("Fira Code", 12)}
+        for x in range(5):
+            rowFrame = tk.Frame(bingoFrame)
+            for y in range(5):
+                btn = tk.Button(
+                    rowFrame, text=str(self.bingoBoard[x][y]), **bingoBtnCfg
+                )
+                btn.pack(side=tk.LEFT)
+                self.bingoBtn += [btn]
+            rowFrame.pack()
+
+        print(self.bingoBoard)
+
+        # buttons
+        buttonFrame = tk.Frame(self.frame, bg="red")
+        buttonFrame.grid(row=2, column=1, sticky="ew")
+        bingoTallybtnCfg = {"width": 4, "height": 3, "font": ("Fira Code", 14)}
+
+        # BINGO buttons
+        bingo = "BINGO"
+        self.bingoTallyButtons = []
+        bingoTallyFrame = tk.Frame(buttonFrame)
+        for i in range(5):
+            btn = tk.Button(bingoTallyFrame, text=bingo[i], **bingoTallybtnCfg)
+            self.bingoTallyButtons += [btn]
+            btn.pack(side=tk.LEFT)
+        bingoTallyFrame.pack()
+        # back button
+        btnCfg = {"width": 50}
+        quitButton = tk.Button(
+            buttonFrame,
+            text="Leave",
+            command=lambda: self.mainWindow.switchToFrame("home"),
+            **btnCfg
+        )
+        quitButton.pack()
+        bingoFrame.grid_propagate(0)
+
+
 if __name__ == "__main__":
     window = MainWindow("BINGO")
     pages = {
         "home": HomePage(window),
         "host": HostPage(window),
         "bingo": BingoPage(window),
+        "game": BingoGamePage(window),
     }
     window.setFrames(pages)
     window.show()
