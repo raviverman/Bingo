@@ -1,4 +1,5 @@
 import socket
+import pdb
 
 class Network(object):
     def __init__(self, serverIP=None, serverPort=9000):
@@ -20,9 +21,10 @@ class Network(object):
 
             # server queue length 3
             self.serverSocket.listen(3)
+            print(f"Listening at port {self.serverPort}")
         except:
             print(f"Port {self.serverPort} busy")
-            return
+            return None
         
         self.clientSocket, _ = self.serverSocket.accept()
         return self.clientSocket
@@ -36,9 +38,10 @@ class Network(object):
         try:
             self.clientSocket.connect((self.serverIP, self.serverPort))
             print(f"Connected to Server: {self.serverIP} at {self.serverPort}")
+            return True
         except:
-            print("Unable to connect to server")
-            return
+            print(f"Unable to connect to {self.serverIP}:{self.serverPort}")
+            return False
     
     def send(self, data:str):
         """
@@ -61,6 +64,30 @@ class Network(object):
         if isinstance(self.clientSocket, socket.socket):
             self.clientSocket.close()
         
+    @classmethod
+    def validateAddress(cls, address:str, validateIP=True):
+        err = ("", 0)
+        ipPort = address.split(":")
+        if len(ipPort) != 2:
+            return err
+        # validate ip
+        if validateIP:
+            if ipPort[0].count(".") != 3:
+                return err
+            elements = ipPort[0].split('.')
+            for e in elements:
+                if not e.isdigit():
+                    return err
+                if int(e) < 0 or int(e) > 255:
+                    return err
+        # validate port
+        if not ipPort[1].isdigit():
+            return err
+
+        if int(ipPort[1]) < 1 or int(ipPort[1]) > 65535:
+            return err
+        return ipPort
+
 
 if __name__ == "__main__":
     # test network api
