@@ -1,5 +1,6 @@
 from BingoUtilMixin import BingoUtilMixin
 
+
 class Bingo(BingoUtilMixin):
     def __init__(self, dim=5, bingoBoard=None):
         """
@@ -7,17 +8,24 @@ class Bingo(BingoUtilMixin):
         """
         self.dim = dim
         if bingoBoard is None:
-            self.bingoBoard = self.randomizeMatrix(self.generateBingoBoard())
+            self.bingoBoard = self.randomizeMatrix(self.generateBingoBoard(dim))
         else:
             self.bingoBoard = bingoBoard
 
         self.map = self.buildMap(self.bingoBoard)
-    
+
+    def randomizeBoard(self):
+        self.bingoBoard = self.randomizeMatrix(self.bingoBoard)
+
+    def isMarked(self, num: int):
+        x, y = self.map[num]
+        return self.bingoBoard[x][y] < 0
+
     def mark(self, num):
         """
         Marks the bingo tile as marked by making the number negative
         """
-        x,y = self.map[num]
+        x, y = self.map[num]
         if self.bingoBoard[x][y] > 0:
             self.bingoBoard[x][y] *= -1
 
@@ -27,9 +35,9 @@ class Bingo(BingoUtilMixin):
         """
         for x in range(self.dim):
             for y in range(self.dim):
-                print("{:>4}".format(self.bingoBoard[x][y]), end='')
+                print("{:>4}".format(self.bingoBoard[x][y]), end="")
             print("\n")
-    
+
     def evaluateBoard(self):
         """
         Evaluate board to find matches
@@ -45,7 +53,7 @@ class Bingo(BingoUtilMixin):
                     hmatch = False
                 if self.bingoBoard[y][x] > 0:
                     vmatch = False
-            if self.bingoBoard[x][self.dim - x -1] > 0:
+            if self.bingoBoard[x][self.dim - x - 1] > 0:
                 rdiag = False
             if self.bingoBoard[x][x] > 0:
                 ldiag = False
@@ -59,6 +67,7 @@ class Bingo(BingoUtilMixin):
             matches += 1
 
         return matches
+
 
 if __name__ == "__main__":
     bb = Bingo()
