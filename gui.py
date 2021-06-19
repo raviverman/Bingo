@@ -1,6 +1,6 @@
 import tkinter as tk
 import random as rd
-
+from BingoUtilMixin import BingoUtilMixin
 
 class MainWindow(object):
     def __init__(self, title="BINGO", size="600x600"):
@@ -157,35 +157,18 @@ class HostPage(Page):
         titleFrame.grid_propagate(0)
 
 
-class BingoPage(Page):
+class BingoPage(Page, BingoUtilMixin):
     def __init__(self, mainWindow: MainWindow, bingoBoard=None):
         self.mainWindow = mainWindow
         Page.__init__(
             self, mainWindow.mainParent, width=600, height=600, bg="#00ff00"
         )
         if bingoBoard is None:
-            self.bingoBoard = self.generateRandomBoard()
+            self.bingoBoard = self.randomizeMatrix( self.generateBingoBoard() )
         else:
             self.bingoBoard = bingoBoard
         self.bingoBtn = []
         self.configure()
-
-    def generateRandomBoard(self):
-        bb = []
-        i = 1
-        for _ in range(5):
-            bb += [[x for x in range(i, i + 5)]]
-            i += 5
-        return self.randomizeMatrix(bb)
-
-    def randomizeMatrix(self, board):
-        for _ in range(25):
-            x1, y1 = rd.randint(0, 4), rd.randint(0, 4)
-            x2, y2 = rd.randint(0, 4), rd.randint(0, 4)
-            temp = board[x1][y1]
-            board[x1][y1] = board[x2][y2]
-            board[x2][y2] = temp
-        return board
 
     def configure(self):
         self.frame.rowconfigure(4)
@@ -258,7 +241,7 @@ class BingoPage(Page):
                 i += 1
 
 
-class BingoGamePage(BingoPage):
+class BingoGamePage(BingoPage, BingoUtilMixin):
     def __init__(self, mainWindow: MainWindow, bingoBoard=None):
         BingoPage.__init__(self, mainWindow, bingoBoard)
 
