@@ -16,6 +16,7 @@ class Bingo(BingoUtilMixin):
 
     def randomizeBoard(self):
         self.bingoBoard = self.randomizeMatrix(self.bingoBoard)
+        self.map = self.buildMap(self.bingoBoard)
 
     def isMarked(self, num: int):
         x, y = self.map[num]

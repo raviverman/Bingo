@@ -44,7 +44,8 @@ class GameDriver(object):
         return int(inp)
 
     def beginGame(self, connection: Network, chance=ChanceType.Your):
-        while self.bingoBoard.evaluateBoard() < 5:
+        gameOver = False
+        while not gameOver:
             # show everytime
             self.bingoBoard.show()
             if chance == ChanceType.Your:
@@ -53,19 +54,26 @@ class GameDriver(object):
                     print(f"{num} already marked.")
                     continue
                 self.bingoBoard.mark(num)
-                connection.send(str(num))
-                chance = ChanceType.Opponent
+                # eval board and send -1 if game is over (we won)
+                gameOver = self.bingoBoard.evaluateBoard() == 5
+                if gameOver:
+                    connection.send(str(-1))  # indicates game is over
+                else:
+                    connection.send(str(num))
+                    chance = ChanceType.Opponent
             else:
                 print("Waiting for opponent...")
                 num = connection.receive()
-                chance = ChanceType.Your
                 if int(num) == -1:
                     break
                 self.bingoBoard.mark(int(num))
+                gameOver = self.bingoBoard.evaluateBoard() == 5
+                chance = ChanceType.Your
 
         # game ended, but who won
-        if chance == ChanceType.Opponent:  # opponents chance, You won
+        if chance == ChanceType.Your:
             print("You won")
+            connection.send("-1")
         else:
             print("Opponent Won")
         connection.cleanup()
